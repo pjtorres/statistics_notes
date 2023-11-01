@@ -25,13 +25,15 @@ metabolomic_df_clrv2.columns
 
 
 1. Dataframe example (metabolomic_df_clrv2)
+   
    | metabolite_sub_id    | dmetabolite1 | metabolite2 | 
 | -------- | ------- |
 |PB1  | 0.43    |  1.8 |
 | PB2 | -1.2    | 0.8 |
 | PB3    | 1.5    | 1 |
 
-2. Metadata example (hmo_metadata)
+3. Metadata example (hmo_metadata)
+   
 | metabolite_sub_id |	inoculation	|sample_name	|media |
 | -------- | ------- | -------- | ------- |
 | PB1	| Combo_9	| PBT-03139	| HMO|
