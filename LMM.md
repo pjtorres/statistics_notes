@@ -26,7 +26,7 @@ metabolomic_df_clrv2.columns
 
 1. Dataframe example (metabolomic_df_clrv2)
    
-   | metabolite_sub_id    | dmetabolite1 | metabolite2 | 
+| metabolite_sub_id    | dmetabolite1 | metabolite2 | 
 | -------- | ------- |
 |PB1  | 0.43    |  1.8 |
 | PB2 | -1.2    | 0.8 |
