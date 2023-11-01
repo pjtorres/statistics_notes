@@ -42,7 +42,7 @@ metabolomic_df_clrv2.columns
 
 
 3. Do LMM on each metabolite
-```
+```python 
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
