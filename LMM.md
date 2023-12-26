@@ -1,5 +1,6 @@
 # Running Linear Mixed Models
 
+Medium article expanding on the strengths on LMM: https://medium.com/@PedroJTorres_/statistical-insights-addressing-challenges-in-repeated-measures-data-with-linear-mixed-models-41fe4575331c
 Linear Mixed Models (LMMs) represent an advanced and versatile tool in modern statistical analysis, particularly adept at handling repeated measure data. Their adaptability in managing unstructured data, incorporation of random effects, and precise modeling of repeated measures render them an essential choice for researchers across various fields seeking accurate analysis of complex and correlated data structures. The significance of LMMs lies in their ability to provide more accurate and reliable inferences in scenarios where traditional methods, such as ANOVA, fall short in handling the complexities of repeated measures.
 
 ```python
