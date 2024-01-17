@@ -192,7 +192,7 @@ im = ax.imshow(mean_confusion_matrix_percent, interpolation='nearest', cmap=plt.
 ax.figure.colorbar(im, ax=ax)
 ax.set(xticks=np.arange(mean_confusion_matrix_percent.shape[1]),
        yticks=np.arange(mean_confusion_matrix_percent.shape[0]),
-       xticklabels=['C1','C2''], yticklabels=['C1','C2''], # note that you will change this for your labels
+       xticklabels=list(y.unique()), yticklabels=list(y.unique()), # note that you will change this for your labels
        title="Training Mean Confusion Matrix (Percentages)",
        ylabel="True label",
        xlabel="Predicted label")
@@ -246,7 +246,7 @@ im = ax.imshow(confusion_matrix_data_final, interpolation='nearest', cmap=plt.cm
 ax.figure.colorbar(im, ax=ax)
 ax.set(xticks=np.arange(mean_confusion_matrix.shape[1]),
        yticks=np.arange(mean_confusion_matrix.shape[0]),
-       xticklabels=['C1','C2'], yticklabels=['C1','C2'], # this is modified depending on your classes similar to above
+       xticklabels=list(y.unique()), yticklabels=list(y.unique()), # this is modified depending on your classes similar to above
        title="Test Mean Confusion Matrix",
        ylabel="True label",
        xlabel="Predicted label")
