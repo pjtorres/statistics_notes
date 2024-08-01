@@ -1,8 +1,8 @@
-```
-ANOVA (Analysis of Variance) is a statistical method used to compare the means of three or more groups to determine if there are significant differences between them. It assumes that the data are normally distributed, the groups have similar variances (homogeneity of variances), and the samples are independent. ANOVA is appropriate when these assumptions are met and you have one or more categorical independent variables and a continuous dependent variable. It should not be used if the assumptions are violated, such as when the data are not normally distributed or the variances are unequal, as this can lead to inaccurate results.
-```
 
-`python
+ANOVA (Analysis of Variance) is a statistical method used to compare the means of three or more groups to determine if there are significant differences between them. It assumes that the data are normally distributed, the groups have similar variances (homogeneity of variances), and the samples are independent. ANOVA is appropriate when these assumptions are met and you have one or more categorical independent variables and a continuous dependent variable. It should not be used if the assumptions are violated, such as when the data are not normally distributed or the variances are unequal, as this can lead to inaccurate results.
+
+
+```python 
 import numpy as np
 import pandas as pd
 from scipy.stats import f_oneway
@@ -69,4 +69,4 @@ anova_df = anova_analysis(metadata_df, dependent_variable, columns_to_compare)
 
 anova_df
 
-`
+```
