@@ -220,3 +220,104 @@ plt.legend(bbox_to_anchor=(0.5, 1.1), loc="center", fontsize=16)
 
 plt.show()
 ```
+
+# ANCOVA 2 daling with really weird characters in data that we encounter iin kegg names quite a bit
+
+```python
+import pandas as pd
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+from statsmodels.stats.multitest import multipletests
+import numpy as np
+import re
+
+metadata = mapping_filev3
+df_in = species_clr
+df_ra = species_ra
+
+# Reindex df_in to match the sample_ids in metadata
+df_in = df_in.reindex(mapping_filev3['sample_id'])
+
+df_ra = df_ra.reindex(mapping_filev3['sample_id'])
+
+namee = []
+pva = []
+stata = []
+medians = {}
+means = {}
+ses = {}
+ancova_results_wald = []
+
+
+
+for col in df_in.columns:
+    # Combine df_in (abundance data) with metadata into one DataFrame
+    df_combined = pd.merge(df_in.reset_index()[['sample_id', col]], 
+                           metadata[['sample_id', 'dmm_cluster', 'gender']], 
+                           on='sample_id')
+
+    df_relative = pd.merge(df_ra.reset_index()[['sample_id', col]], 
+                           metadata[['sample_id', 'dmm_cluster', 'gender']], 
+                           on='sample_id')
+    print(col)
+    # Clean column names in the DataFrame, replacing spaces, periods, '>' characters, '+' characters, commas, semicolons, and other special characters with underscores
+    df_combined.columns = df_combined.columns.str.replace(r'[\s,;]', '_', regex=True).str.replace(r'[-()/\.>,+]', '_', regex=True).str.replace(r'[\[\]:"]', '_', regex=True).str.replace(r'^(?=\d)', '_', regex=True).str.replace(r"'", '_', regex=True)
+    
+    # Clean a specific column name
+    col2 = re.sub(r'[\s,;]', '_', col)  # Replace spaces, commas, and semicolons first
+    col2 = re.sub(r'[-()/\.>,+]', '_', col2)  # Replace other special characters
+    col2 = re.sub(r'[\[\]:"]', '_', col2)  # Replace any remaining unwanted characters
+    col2 = re.sub(r'^(?=\d)', '_', col2)
+    col2 = re.sub(r"'", '_', col2)
+    # print(col2)
+    # print(df_combined[col2])
+    # Fit the ANCOVA model: abundance ~ dmm_cluster + gender
+    model = smf.ols(formula=f'{col2} ~ C(dmm_cluster) + C(gender)', data=df_combined).fit()
+
+    # Perform Wald test for the effect of dmm_cluster (testing if all dmm_cluster coefficients are 0)
+    wald_test = model.wald_test_terms(['C(dmm_cluster)'])
+    
+    # Extract Wald test p-value
+    wald_pvalue = wald_test.table['pvalue'].values[0].item()
+
+    # Group data by 'dmm_cluster'
+    grouped = df_combined.groupby('dmm_cluster')[col2]
+    grouped_ra = df_relative.groupby('dmm_cluster')[col]
+
+    # Initialize dictionaries to store results for the current feature
+    medians[col] = {}
+    means[col] = {}
+    ses[col] = {}
+
+    # Loop over unique dmm_cluster values dynamically
+    for cluster in df_combined['dmm_cluster'].unique():
+        # Calculate median, standard error, and mean for each cluster
+        medians[col][cluster] = grouped.median().get(cluster, np.nan)
+        ses[col][cluster] = grouped.std().get(cluster, np.nan) / np.sqrt(grouped.count().get(cluster, 1))
+        means[col][cluster] = grouped_ra.mean().get(cluster, np.nan)
+    
+    namee.append(col)
+
+    # Store p-values and coefficients in the ancova_results_wald list
+    ancova_results_wald.append({
+        'feature': col,
+        'pvalue': wald_pvalue,
+        'coef_dmm_cluster_1_vs_2': model.params.get('C(dmm_cluster)[T.2]', np.nan),  
+        'coef_dmm_cluster_1_vs_3': model.params.get('C(dmm_cluster)[T.3]', np.nan),  
+    })
+
+# Create DataFrame for results
+df = pd.DataFrame(ancova_results_wald)
+
+# Correct p-values using FDR
+df['pvalue_corr'] = multipletests(df['pvalue'], alpha=0.05, method='fdr_bh')[1]
+
+# Add means, medians, and standard errors for all clusters dynamically
+for cluster in df_combined['dmm_cluster'].unique():
+    df[f'ra_mean_dmm{cluster}'] = df['feature'].map(lambda col: means[col].get(cluster, np.nan))
+    df[f'median_dmm{cluster}'] = df['feature'].map(lambda col: medians[col].get(cluster, np.nan))
+    df[f'se_dmm{cluster}'] = df['feature'].map(lambda col: ses[col].get(cluster, np.nan))
+
+# Final DataFrame
+ancova_df = df
+```
