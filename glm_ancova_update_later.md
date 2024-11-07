@@ -222,6 +222,7 @@ plt.show()
 ```
 
 # ANCOVA 2 daling with really weird characters in data that we encounter iin kegg names quite a bit
+Currently, I'm working with DMM clusters, but this needs to be updated to automatically handle any number of conditional variables I want.
 
 ```python
 import pandas as pd
@@ -317,6 +318,13 @@ for cluster in df_combined['dmm_cluster'].unique():
     df[f'ra_mean_dmm{cluster}'] = df['feature'].map(lambda col: means[col].get(cluster, np.nan))
     df[f'median_dmm{cluster}'] = df['feature'].map(lambda col: medians[col].get(cluster, np.nan))
     df[f'se_dmm{cluster}'] = df['feature'].map(lambda col: ses[col].get(cluster, np.nan))
+
+# Add 'higher_in' column based on the maximum ra_mean for each feature
+df['higher_in'] = df.apply(
+    lambda row: f'dmm{np.argmax([row["ra_mean_dmm1"], row["ra_mean_dmm2"], row["ra_mean_dmm3"]]) + 1}', 
+    axis=1
+)
+
 
 # Final DataFrame
 ancova_df = df
