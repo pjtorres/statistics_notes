@@ -75,57 +75,62 @@ print("Best estimator:", grid_search.best_estimator_)
 4. Run your logistic regression model and track key metrics, such as the mean accuracy score and mean coefficients for each significant variable. Record important variables along with their coefficients (excluding those with a coefficient of 0). Also, keep a count of the frequency of each variable to facilitate the assessment of feature stability later on.
 
 ```python
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import StratifiedKFold
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, confusion_matrix
-from sklearn.inspection import permutation_importance
 from collections import Counter
-
 import numpy as np
+import pandas as pd
 
-# Define the pipeline
-
-# this is the best approach when doing Relative abundance
+# Define the pipeline (with optional scaler)
 pipeline = Pipeline([
-    ('scaler', StandardScaler()),
-    ('lgr', LogisticRegression(solver='liblinear', multi_class='auto', penalty='l1', C=0.1, class_weight=None))
+    # You might want to add StandardScaler if your features vary in scale.
+    # ('scaler', StandardScaler()),
+    ('lgr', LogisticRegression(C=2, max_iter=5000, penalty='l1', solver='liblinear',class_weight='balanced'))
 ])
 
 # Define the cross-validation strategy
-cv = StratifiedKFold(n_splits=10)
+cv = StratifiedKFold(n_splits=20)
 
-# Perform cross-validation
+# Initialize containers for results
 accuracies = []
-feature_importances = []
 confusion_matrices = []
+feature_importances = []
 all_selected_features = []
 
+# Perform cross-validation
 for train_index, test_index in cv.split(X, y):
     X_train, X_test = X.iloc[train_index], X.iloc[test_index]
     y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+    
+    # Fit the model
     pipeline.fit(X_train, y_train)
     y_pred = pipeline.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
-    accuracies.append(accuracy)
     
-    # Get the confusion matrix for this split
-    confusion_matrix_data = confusion_matrix(y_test, y_pred)
-    confusion_matrices.append(confusion_matrix_data)
+    # Store accuracy and confusion matrix
+    accuracies.append(accuracy_score(y_test, y_pred))
+    confusion_matrices.append(confusion_matrix(y_test, y_pred))
     
-    # Get the feature importances of the model using non-zero coefficients
-    selected_features = X_train.columns[pipeline.named_steps['lgr'].coef_[0] != 0]
+    # Get the feature importances (non-zero coefficients)
+    coef = pipeline.named_steps['lgr'].coef_
+    
+    # If multiclass, average coefficients across classes
+    avg_coef = np.mean(coef, axis=0)
+    
+    selected_features = X_train.columns[avg_coef != 0]
+    feature_scores = avg_coef[avg_coef != 0]
+    
     all_selected_features.append(selected_features)
     
-    # Get the most important features and their scores
-    important_features = selected_features
-    feature_scores = pipeline.named_steps['lgr'].coef_[0][pipeline.named_steps['lgr'].coef_[0] != 0]
-    print("Important Features:", important_features)
-    feature_importances.append((important_features, feature_scores))
+    # Store the feature importances
+    feature_importances.append((selected_features, feature_scores))
 
-# Calculate the mean accuracy and print it
+# Calculate the mean accuracy
 mean_accuracy = np.mean(accuracies)
 print("Mean Accuracy:", mean_accuracy)
 
-# Get the most important features over all the splits and their scores
+# Consolidate feature importances across folds
 most_important_features = {}
 for importance in feature_importances:
     for i in range(len(importance[0])):
@@ -138,32 +143,37 @@ for importance in feature_importances:
 
 # Calculate the average score for each feature
 for feature in most_important_features:
-    score = np.mean(most_important_features[feature])
-    most_important_features[feature] = score
+    most_important_features[feature] = np.mean(most_important_features[feature])
 
-# Sort the features by score and print them
+# Sort the features by score
 sorted_features = sorted(most_important_features.items(), key=lambda x: x[1], reverse=True)
-print("Most Important Features:")
-for feature in sorted_features:
-    print(feature[0], "-", feature[1])
-    
-## count feature
-# Calculate feature frequencies across folds
+
+# Print the most important features and their average coefficients
+print("Most Important Features with Average Coefficients:")
+for feature, avg_score in sorted_features:
+    print(f"{feature} - {avg_score}")
+
+# Count feature frequency across folds
 feature_frequencies = Counter(feature for sublist in all_selected_features for feature in sublist)
 
 # Sort features by frequency
 sorted_features_frequency = sorted(feature_frequencies.items(), key=lambda x: x[1], reverse=True)
 
-# Print the sorted features and their frequencies
+# Convert to DataFrame for better visualization
+freq_df = pd.DataFrame(sorted_features_frequency, columns=['feature', 'Frequency'])
+coeff_df = pd.DataFrame(sorted_features, columns=['feature', 'Average Coeff'])
 
-freq_a = pd.DataFrame(sorted_features_frequency).rename(columns={0:'Gene_cluster',1:'Frequency'})
-sort_feat = pd.DataFrame(sorted_features).rename(columns={0:'Gene_cluster',1:'Coeff'})
-sorted_frequency_feat = pd.merge(sort_feat,freq_a)
+# Merge frequency and coefficient DataFrames
+sorted_frequency_feat = pd.merge(coeff_df, freq_df, on='feature')
 
-# Calculate the mean confusion matrix
+# Print the final merged DataFrame
+print(sorted_frequency_feat)
+
+# Calculate and print the mean confusion matrix
 mean_confusion_matrix = np.mean(confusion_matrices, axis=0)
 print("Mean Confusion Matrix:")
 print(mean_confusion_matrix)
+
 ```
 ```python
 # save model
